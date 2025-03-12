@@ -9,7 +9,6 @@ from tqdm import tqdm
 def setup_model(num_classes=10, L=3, K=16, hidden_channels=256, split_mode='channel', scale=True):
 
     torch.manual_seed(3008)
-
     input_shape = (3, 32, 32)
     n_dims = np.prod(input_shape)
     channels = 3
