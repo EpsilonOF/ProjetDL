@@ -24,4 +24,11 @@ def setup_model(num_layers=32):
     # Construct flow model
     model = nf.NormalizingFlow(base, flows)
 
-    return model
+    # Move model on GPU if available
+    enable_cuda = True
+    device = torch.device('cuda' if torch.cuda.is_available() and enable_cuda else 'cpu')
+    model = model.to(device)
+
+    return model, device
+
+
