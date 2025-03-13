@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from train_glow import execute_glow
 
 def show_glow():
@@ -18,6 +19,11 @@ def show_glow():
     2. **Convolution 1x1 inversible** - Remplace l'étape de permutation utilisée dans RealNVP
     3. **Couplage affine** - Similaire à RealNVP mais avec une architecture améliorée
     """)
+    st.image("images/glow/architecture.png", width=600)
+    st.write("""
+    Ici, L est le \"niveau\" de l'architecture multi-échelle et K est le nombre de couches de chaque bloc, soit
+    $f = f_1 \circ f_2 \circ \ldots \circ f_K$ avec $z = f_{\\theta}(x)$.
+    """)
     
     st.header("Composantes clés")
     
@@ -29,10 +35,10 @@ def show_glow():
     Pour une entrée h, l'opération est:
     """)
     st.latex(r'''
-    y = s ⊙ (h + b)
+    y = s \odot (h + b)
     ''')
     st.write("""
-    où s et b sont des paramètres appris et ⊙ représente la multiplication élément par élément.
+    où s et b sont des paramètres appris et $\\odot$ représente la multiplication élément par élément (produit Hadamard).
     
     Cette couche est initialisée pour que la sortie ait une moyenne nulle et une variance unitaire,
     ce qui aide à stabiliser l'entraînement des réseaux profonds.
@@ -42,7 +48,7 @@ def show_glow():
     st.write("""
     Les convolutions 1x1 inversibles remplacent les permutations fixes utilisées dans RealNVP
     par une opération apprise. Cette opération peut être représentée par une matrice de poids W
-    dont la taille est c * c (où c est le nombre de canaux).
+    dont la taille est $c \cdot c$ (où c est le nombre de canaux).
     
     Pour une entrée h, l'opération est:
     """)
@@ -57,8 +63,8 @@ def show_glow():
     log|det(\frac{\partial y}{\partial h})| = log|det(W)|
     ''')
     st.write("""
-    Le calcul naïf du déterminant aurait une complexité O(c³), mais Glow utilise une 
-    décomposition LU pour réduire ce coût à O(c²), rendant l'opération efficace même pour 
+    Le calcul naïf du déterminant aurait une complexité $\\mathcal{O}(c³)$, mais Glow utilise une 
+    décomposition $LU$ pour réduire ce coût à $\\mathcal{O}(c²)$, rendant l'opération efficace même pour 
     un grand nombre de canaux.
     """)
     
@@ -80,6 +86,18 @@ def show_glow():
     où NN est un réseau de neurones. Contrairement à RealNVP, Glow utilise des réseaux plus 
     sophistiqués avec des convolutions, des normalisations et des activations non-linéaires.
     """)
+
+    st.subheader("Tableau récapitulatif")
+    st.write("""
+    Résumons les 3 différentes étapes de Glow, avec ses caractéristiques :
+    """)
+    tableau = {
+        'Description': ['Actnorm', 'Convolution 1x1 inversible, $W$ : $[c \\times c]$', 'Couche de couplage affine'],
+        'Fonction': ['$\\forall i,j : y_{i,j} = s \\odot x_{i,j} + b$', '$y = W \\cdot x$', '$x_a, x_b = split(x)\\newline log(s,t) = NN(x_b)\\newline s = exp(log s)\\newline y_a = s \\odot x_a + t\\newline y_b = x_b\\newline y = concat(y_a, y_b)$'],
+        'Fonction inverse': ['$\\forall i,j : x_{i,j} = (y_{i,j} - b) / s$', '$\\forall i,j: x_{i,j} = W^{-1} \\cdot y_{i,j}$', '$y_a, y_b = split(y)\\newline log(s,t) = NN(y_b)\\newline s = exp(log s)\\newline x_a = (y_a-t)/s\\newline x_b = y_b\\newline x = concat(x_a, x_b)$'],
+        'Log-determinant': ['$h \\cdot w \\cdot sum(log|s|)$', '$h \\cdot w \\cdot log|det(W)|\\newline or\\newline h \\cdot w \\cdot sum(log|s|)$', '$sum(log|s|)$']
+    }
+    st.table(tableau)
     
     st.header("Architecture multi-échelle")
     st.write("""
@@ -120,19 +138,6 @@ def show_glow():
         - Architecture moins flexible que les VAEs ou GANs
         - Difficulté à modéliser certaines distributions très complexes
         """)
-    
-    st.header("Formulation mathématique")
-    st.latex(r'''
-    \log p_X(x) = \log p_Z(f(x)) + \log \left| \det \frac{\partial f(x)}{\partial x} \right|
-    ''')
-    
-    st.write("""
-    où:
-    - $p_X(x)$ est la densité de probabilité des données réelles
-    - $p_Z(z)$ est la densité de probabilité de la distribution latente (généralement une gaussienne)
-    - $f$ est la transformation inversible apprise
-    - Le second terme est le logarithme du déterminant de la jacobienne de la transformation
-    """)
     
     st.header("Implémentation et démo interactive")
     st.write("""
