@@ -88,13 +88,13 @@ def show_realnvp():
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Masque en damier")
-        st.image("images/masque_damier.png", 
+        st.image("images/realnvp/masque_damier.png", 
                 caption="Illustration d'un masque en damier",
                 width=200)
     
     with col2:
         st.subheader("Masque par canaux")
-        st.image("images/masque_canaux.png", 
+        st.image("images/realnvp/masque_canaux.png", 
                 caption="Illustration d'un masque par canaux",
                 width=200)
     
@@ -178,9 +178,9 @@ def show_realnvp():
         with st.spinner("Génération en cours..."):
             image_path = None
             if uploaded_file is not None:
-                with open("images/uploaded_image.png", "wb") as f:
+                with open("images/realnvp/uploaded_image.png", "wb") as f:
                     f.write(uploaded_file.getbuffer())
-                    image_path = "images/uploaded_image.png"
+                    image_path = "images/realnvp/uploaded_image.png"
                 
                 # Afficher l'image
                 st.image(uploaded_file, caption="Image téléchargée", width=200)
