@@ -69,7 +69,7 @@ def prepare_training_data(batch_size=128):
 
     return train_loader, test_loader, train_iter
 
-def train_model(model, train_loader, train_iter, device, max_iter=20000, model_path="glow_model.pth"):
+def train_model(model, train_loader, train_iter, device, max_iter=20000, model_path="data/glow_model.pth"):
     loss_hist = np.array([])
     optimizer = torch.optim.Adamax(model.parameters(), lr=1e-3, weight_decay=1e-5)
 
@@ -105,7 +105,7 @@ def generate_samples(model, num_classes, device, num_sample=10):
         # Pour MNIST, on utilise une palette de gris
         plt.figure(figsize=(10, 10))
         plt.imshow(np.transpose(tv.utils.make_grid(x_, nrow=num_classes).cpu().numpy(), (1, 2, 0)), cmap='gray')
-        plt.savefig("images/glow/loss_plot.png")
+        plt.savefig("images/glow/mnist_generated.png")
         plt.close()
 
 def get_bits_per_dim(model, test_loader, n_dims, device):
@@ -127,7 +127,7 @@ def execute_glow():
     print("prepare_training_data done")
     # train_model(model, train_loader, train_iter, device)
     # model, num_classes, n_dims = setup_model()
-    model.load_state_dict(torch.load('glow_model.pth', map_location='cpu'))
+    model.load_state_dict(torch.load('data/glow_model.pth', map_location='cpu'))
     print("load model done")
     model.eval()
     print("model.eval done")
