@@ -182,25 +182,31 @@ def show_glow():
 
     if generate_button:
         with st.spinner("Génération d'images en cours..."):
-            # execute_glow()
+            execute_glow()
+            col1, col2 = st.columns(2)
+            with col1:
+                st.image("images/glow/loss_plot.png",
+                 caption="Échantillons générés par le modèle Glow",
+                 width=500)            
+            # with col2:
+                # st.image("images/glow/resultat.png", caption="Résultat", width=300)
+            # # Affichage des résultats (simulations avec des placeholders)
+            # st.write(f"Images générées avec température={temperature}, attributs appliqués:")
             
-            # Affichage des résultats (simulations avec des placeholders)
-            st.write(f"Images générées avec température={temperature}, attributs appliqués:")
-            
-            # Créer une grille d'images générées
-            image_cols = st.columns(min(4, batch_size))
-            for i in range(batch_size):
-                col_idx = i % 4
-                with image_cols[col_idx]:
-                    # Dans une implémentation réelle, vous afficheriez les vraies images générées
-                    # Pour l'instant, utilisons des placeholders
-                    st.image(f"https://via.placeholder.com/150?text=Glow+Image+{i+1}", 
-                            caption=f"Image {i+1}")
+            # # Créer une grille d'images générées
+            # image_cols = st.columns(min(4, batch_size))
+            # for i in range(batch_size):
+            #     col_idx = i % 4
+            #     with image_cols[col_idx]:
+            #         # Dans une implémentation réelle, vous afficheriez les vraies images générées
+            #         # Pour l'instant, utilisons des placeholders
+            #         st.image(f"https://via.placeholder.com/150?text=Glow+Image+{i+1}", 
+            #                 caption=f"Image {i+1}")
                     
-                    st.write(f"Paramètres appliqués:")
-                    for attr, val in attributs.items():
-                        if abs(val) > 0.1:  # N'afficher que les attributs significativement modifiés
-                            st.write(f"- {attr}: {val:+.1f}")
+            #         st.write(f"Paramètres appliqués:")
+            #         for attr, val in attributs.items():
+            #             if abs(val) > 0.1:  # N'afficher que les attributs significativement modifiés
+            #                 st.write(f"- {attr}: {val:+.1f}")
 
 
     # Explication supplémentaire sur le fonctionnement de la manipulation

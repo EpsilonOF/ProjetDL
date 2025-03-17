@@ -6,6 +6,8 @@ import normflows as nf
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
+import streamlit as st
+
 def setup_model(num_classes=10, L=2, K=16, hidden_channels=256, split_mode='channel', scale=True):
     # Modification de seed pour la reproductibilité
     torch.manual_seed(3008)
@@ -67,7 +69,7 @@ def prepare_training_data(batch_size=128):
 
     return train_loader, test_loader, train_iter
 
-def train_model(model, train_loader, train_iter, device, max_iter=20000):
+def train_model(model, train_loader, train_iter, device, max_iter=20000, model_path="glow_model.pth"):
     loss_hist = np.array([])
     optimizer = torch.optim.Adamax(model.parameters(), lr=1e-3, weight_decay=1e-5)
 
@@ -86,6 +88,7 @@ def train_model(model, train_loader, train_iter, device, max_iter=20000):
 
         loss_hist = np.append(loss_hist, loss.detach().to('cpu').numpy())
         del(x, y, loss)
+    torch.save(model.state_dict(), model_path)
 
     # Affichage de l'historique des pertes
     plt.figure(figsize=(10, 10))
@@ -102,7 +105,8 @@ def generate_samples(model, num_classes, device, num_sample=10):
         # Pour MNIST, on utilise une palette de gris
         plt.figure(figsize=(10, 10))
         plt.imshow(np.transpose(tv.utils.make_grid(x_, nrow=num_classes).cpu().numpy(), (1, 2, 0)), cmap='gray')
-        plt.show()
+        plt.savefig("images/glow/loss_plot.png")
+        plt.close()
 
 def get_bits_per_dim(model, test_loader, n_dims, device):
     n = 0
@@ -118,13 +122,20 @@ def get_bits_per_dim(model, test_loader, n_dims, device):
 
 def execute_glow():
     model, num_classes, n_dims, device = setup_model()
+    print("setup_model done")
     train_loader, test_loader, train_iter = prepare_training_data()
-    train_model(model, train_loader, train_iter, device)
+    print("prepare_training_data done")
+    # train_model(model, train_loader, train_iter, device)
+    # model, num_classes, n_dims = setup_model()
+    model.load_state_dict(torch.load('glow_model.pth', map_location='cpu'))
+    print("load model done")
+    model.eval()
+    print("model.eval done")
     generate_samples(model, num_classes, device)
-    get_bits_per_dim(model, test_loader, n_dims, device)
+    print("generate_samples done")
+    # get_bits_per_dim(model, test_loader, n_dims, device)
+    # print("get_bits_per_dim done")
 
-if __name__ == "__main__":
-    execute_glow()
 
 # import torch
 # import torchvision as tv
