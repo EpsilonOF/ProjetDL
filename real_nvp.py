@@ -1,4 +1,8 @@
 import streamlit as st
+import normflows as nf
+import torch
+import matplotlib.pyplot as plt
+from train_realnvp import setup_model, target_distribution, train_model
 
 def show_realnvp():
     st.title("RealNVP: Real-valued Non-Volume Preserving")
@@ -84,13 +88,13 @@ def show_realnvp():
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Masque en damier")
-        st.image("images/masque_damier.png", 
+        st.image("images/realnvp/masque_damier.png", 
                 caption="Illustration d'un masque en damier",
                 width=200)
     
     with col2:
         st.subheader("Masque par canaux")
-        st.image("images/masque_canaux.png", 
+        st.image("images/realnvp/masque_canaux.png", 
                 caption="Illustration d'un masque par canaux",
                 width=200)
     
@@ -125,6 +129,116 @@ def show_realnvp():
     ont directement influencé les modèles ultérieurs, notamment Glow qui a poussé
     encore plus loin ces innovations.
     """)
+
+    st.header("Tester le modèle RealNVP")
+    st.write("""
+    Expérimentez avec le modèle RealNVP en ajustant différents hyperparamètres:
+    """)
+
+    # Disposition en colonnes pour les paramètres et résultats
+    col1, col2 = st.columns([1, 1])
+
+    with col1:
+        st.subheader("Hyperparamètres")
+        n_blocks = st.slider("Nombre de blocs de couplage", min_value=2, max_value=12, value=6, step=1)
+        hidden_channels = st.slider("Nombre de canaux cachés", min_value=32, max_value=256, value=128, step=32)
+        
+        st.subheader("Architecture")
+        mask_type = st.radio(
+            "Type de masque",
+            ["Damier", "Par canaux", "Mixte"]
+        )
+        
+        multi_scale = st.checkbox("Architecture multi-échelle", value=True)
+        batch_norm = st.checkbox("Utiliser BatchNorm", value=True)
+        
+        st.subheader("Données")
+        dataset = st.selectbox(
+            "Jeu de données",
+            ["MNIST", "CIFAR-10", "CelebA", "Distribution 2D", "Image personnalisée"]
+        )
+        if dataset=="Image personnalisée":
+            uploaded_file = st.file_uploader("Télécharger une image", type=["jpg", "jpeg", "png"])
+        
+        generate_button = st.button("Générer", key="realnvp_generate")
+
+    with col2:
+        st.subheader("Paramètres d'échantillonnage")
+        temperature = st.slider("Température", min_value=0.1, max_value=1.0, value=0.7, step=0.1)
+        n_samples = st.slider("Nombre d'échantillons", min_value=1, max_value=16, value=4, step=1)
+        max_iter = st.slider("Itérations d'entraînement", min_value=1000, max_value=5000, value=2000, step=500)
+        if dataset == "Distribution 2D":
+            distribution = st.selectbox(
+                "Type de distribution 2D",
+                ["Gaussienne 2D", "Mélange de gaussiennes", "Spirale", "Anneaux", "Damier"]
+            )
+
+    # Section pour afficher les résultats
+    if generate_button:
+        with st.spinner("Génération en cours..."):
+            image_path = None
+            if uploaded_file is not None:
+                with open("images/realnvp/uploaded_image.png", "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                    image_path = "images/realnvp/uploaded_image.png"
+                
+                # Afficher l'image
+                st.image(uploaded_file, caption="Image téléchargée", width=200)
+            # Configuration des paramètres utilisateur
+            num_layers = n_blocks * 2  # Chaque bloc de couplage est souvent pair
+            show_iter = int(max_iter/10)   # Affichage intermédiaire
+
+            # Initialisation du modèle avec les hyperparamètres de l'utilisateur
+            model, device, target = setup_model(image_path, num_layers=num_layers)  # image_path utilisé si un dataset est image-based
+            xx, yy, zz = target_distribution(target, device)
+
+            loss_hist = []
+            optimizer = torch.optim.Adam(model.parameters(), lr=5e-4, weight_decay=1e-5)
+
+            cols = st.columns(int((max_iter // show_iter)/2))  # Colonnes pour affichage des miniatures
+            cols2 = cols
+            for it in range(max_iter):
+                optimizer.zero_grad()
+                x = target.sample(512).to(device)
+                loss = model.forward_kld(x)
+
+                if not (torch.isnan(loss) or torch.isinf(loss)):
+                    loss.backward()
+                    optimizer.step()
+
+                loss_hist.append(loss.item())
+
+                if (it + 1) % show_iter == 0:
+                    model.eval()
+                    with torch.no_grad():
+                        log_prob = model.log_prob(zz)
+                    prob = torch.exp(log_prob.to('cpu').view(*xx.shape))
+                    prob[torch.isnan(prob)] = 0
+
+                    fig, ax = plt.subplots(figsize=(3, 3))
+                    ax.pcolormesh(xx, yy, prob.numpy(), cmap='coolwarm')
+                    ax.set_aspect('equal', 'box')
+                    ax.axis('off')
+                    ax.set_title(f"Itération {it+1}", fontsize=10)
+                    if it//show_iter>=len(cols):
+                        cols2[(it // show_iter)%len(cols)].pyplot(fig)
+                    else:
+                        cols[it // show_iter].pyplot(fig)
+                    plt.close(fig)  # Libération mémoire
+
+                    model.train()
+
+            # Affichage final de la courbe de perte
+            fig_loss, ax_loss = plt.subplots()
+            ax_loss.plot(loss_hist, label="Perte")
+            ax_loss.set_xlabel("Itération")
+            ax_loss.set_ylabel("Perte")
+            ax_loss.set_title("Historique de la perte")
+            ax_loss.legend()
+            st.pyplot(fig_loss)
+
+            st.write(f"Modèle RealNVP avec {n_blocks} blocs, masque '{mask_type}', et jeu de données '{dataset}'")
+            
     
     st.header("Ressources")
     st.write("""
