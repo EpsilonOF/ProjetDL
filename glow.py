@@ -1,5 +1,8 @@
 import streamlit as st
-from train_glow import execute_glow
+import torch
+import matplotlib.pyplot as plt
+import numpy as np
+from train_glow import setup_model, prepare_training_data, generate_samples, get_bits_per_dim, execute_glow
 
 def show_glow():
     st.title("Glow: Generative Flow with Invertible 1x1 Convolutions")
@@ -19,6 +22,11 @@ def show_glow():
     3. **Couplage affine** - Similaire à RealNVP mais avec une architecture améliorée
     """)
     
+    # Affichage de l'architecture Glow
+    st.image("images/glow/architecture.png", 
+             caption="Architecture du modèle Glow",
+             width=600)
+             
     st.header("Composantes clés")
     
     st.subheader("1. Actnorm")
@@ -29,7 +37,7 @@ def show_glow():
     Pour une entrée h, l'opération est:
     """)
     st.latex(r'''
-    y = s ⊙ (h + b)
+    y = s \odot (h + b)
     ''')
     st.write("""
     où s et b sont des paramètres appris et ⊙ représente la multiplication élément par élément.
@@ -42,7 +50,7 @@ def show_glow():
     st.write("""
     Les convolutions 1x1 inversibles remplacent les permutations fixes utilisées dans RealNVP
     par une opération apprise. Cette opération peut être représentée par une matrice de poids W
-    dont la taille est c * c (où c est le nombre de canaux).
+    dont la taille est c × c (où c est le nombre de canaux).
     
     Pour une entrée h, l'opération est:
     """)
@@ -54,7 +62,7 @@ def show_glow():
     Le logarithme du déterminant de la jacobienne est simplement:
     """)
     st.latex(r'''
-    log|det(\frac{\partial y}{\partial h})| = log|det(W)|
+    \log|\det(\frac{\partial y}{\partial h})| = \log|\det(W)|
     ''')
     st.write("""
     Le calcul naïf du déterminant aurait une complexité O(c³), mais Glow utilise une 
@@ -68,13 +76,13 @@ def show_glow():
     en deux parties, applique une transformation à une partie conditionnée sur l'autre:
     """)
     st.latex(r'''
-    h_a, h_b = split(h)
+    h_a, h_b = \text{split}(h)
     \newline
-    s, t = NN(h_a)
+    s, t = \text{NN}(h_a)
     \newline
-    h_b' = s ⊙ h_b + t
+    h_b' = s \odot h_b + t
     \newline
-    y = concat(h_a, h_b')
+    y = \text{concat}(h_a, h_b')
     ''')
     st.write("""    
     où NN est un réseau de neurones. Contrairement à RealNVP, Glow utilise des réseaux plus 
@@ -110,6 +118,7 @@ def show_glow():
         - Échantillonnage direct et rapide
         - Architecture inversible efficace
         - Manipulation précise d'attributs sémantiques
+        - Meilleure qualité d'images que RealNVP
         """)
     
     with col2:
@@ -117,8 +126,9 @@ def show_glow():
         st.write("""
         - Complexité computationnelle élevée
         - Nécessite beaucoup de mémoire
-        - Architecture moins flexible que les VAEs ou GANs
+        - Entraînement plus long que VAEs/GANs
         - Difficulté à modéliser certaines distributions très complexes
+        - Résolution d'images limitée comparée aux GANs récents
         """)
     
     st.header("Formulation mathématique")
@@ -134,9 +144,10 @@ def show_glow():
     - Le second terme est le logarithme du déterminant de la jacobienne de la transformation
     """)
     
-    st.header("Implémentation et démo interactive")
+    st.header("Démo interactive")
     st.write("""
-    Vous pouvez expérimenter avec le modèle Glow ci-dessous en ajustant différents paramètres:
+    Expérimentez avec le modèle Glow en ajustant les paramètres ci-dessous. Le modèle a été pré-entraîné
+    sur le jeu de données MNIST pour générer des chiffres manuscrits.
     """)
 
     # Disposition en colonnes pour les paramètres et résultats
@@ -144,62 +155,63 @@ def show_glow():
 
     with col1:
         st.subheader("Paramètres du modèle")
-        n_flow = st.slider("Nombre de couches de flux", min_value=1, max_value=32, value=12, step=1)
-        n_blocks = st.slider("Nombre de blocs", min_value=1, max_value=8, value=4, step=1)
-        no_lu = st.checkbox("Désactiver la décomposition LU (plus lent mais potentiellement plus précis)", value=False)
+        n_flow = st.slider("Nombre de couches de flux par niveau (K)", min_value=1, max_value=32, value=12, step=1)
+        n_blocks = st.slider("Nombre de niveaux (L)", min_value=1, max_value=8, value=4, step=1)
+        hidden_channels = st.slider("Nombre de canaux cachés", min_value=64, max_value=512, value=256, step=64)
         
-        st.subheader("Paramètres de génération")
-        temperature = st.slider("Température (contrôle la variabilité)", min_value=0.1, max_value=1.0, value=0.7, step=0.1)
-        batch_size = st.slider("Nombre d'images à générer", min_value=1, max_value=16, value=4, step=1)
+        dataset = st.selectbox(
+            "Jeu de données",
+            ["MNIST", "CIFAR10"]
+        )
         
-        seed = st.number_input("Seed pour la génération aléatoire", min_value=0, max_value=9999, value=42)
+        use_lu = not st.checkbox("Désactiver la décomposition LU (plus lent mais potentiellement plus expressif)", value=False)
         
-        generate_button = st.button("Générer des images")
-
     with col2:
-        st.subheader("Manipulation d'attributs")
-        st.write("Ajustez les attributs sémantiques pour modifier les images générées:")
+        st.subheader("Paramètres de génération")
+        temperature = st.slider("Température (contrôle la diversité)", min_value=0.1, max_value=1.0, value=0.7, step=0.1)
+        num_samples = st.slider("Nombre d'échantillons par classe", min_value=1, max_value=10, value=4, step=1)
         
-        sourire = st.slider("Sourire", min_value=-2.0, max_value=2.0, value=0.0, step=0.1)
-        age = st.slider("Âge", min_value=-2.0, max_value=2.0, value=0.0, step=0.1)
-        lunettes = st.slider("Lunettes", min_value=-2.0, max_value=2.0, value=0.0, step=0.1)
-        genre = st.slider("Genre", min_value=-2.0, max_value=2.0, value=0.0, step=0.1)
-        
-        attributs = {
-            "Sourire": sourire,
-            "Âge": age,
-            "Lunettes": lunettes,
-            "Genre": genre
-        }
+        # Ajouter des options de training si souhaité
+        training_options = st.expander("Options d'entraînement", expanded=False)
+        with training_options:
+            train = st.checkbox("Réentraîner le modèle", value=False)
+            if train:
+                max_iter = st.slider("Nombre d'itérations d'entraînement", min_value=1000, max_value=20000, value=5000, step=1000)
+            else:
+                max_iter = 5000  # Valeur par défaut si pas d'entraînement
+
+    # Section pour le bouton de génération
+    generate_button = st.button("Générer des images", key="glow_generate")
 
     # Section pour afficher les résultats
-    st.subheader("Résultats de la génération")
-
     if generate_button:
-        with st.spinner("Génération d'images en cours..."):
-            execute_glow()
+        with st.spinner(f"Traitement en cours... {'Entraînement et ' if train else ''}Génération d'images avec Glow"):
+            # Appel à la fonction execute_glow avec les paramètres sélectionnés
+            samples, bpd = execute_glow(
+                n_flow=n_flow,
+                n_blocks=n_blocks,
+                hidden_channels=hidden_channels,
+                temperature=temperature,
+                num_samples=num_samples,
+                train=train,
+                max_iter=max_iter,
+                dataset=dataset
+            )
             
-            # Affichage des résultats (simulations avec des placeholders)
-            # st.write(f"Images générées avec température={temperature}, attributs appliqués:")
-            
-            # # Créer une grille d'images générées
-            # image_cols = st.columns(min(4, batch_size))
-            # for i in range(batch_size):
-            #     col_idx = i % 4
-            #     with image_cols[col_idx]:
-            #         # Dans une implémentation réelle, vous afficheriez les vraies images générées
-            #         # Pour l'instant, utilisons des placeholders
-            #         st.image(f"https://via.placeholder.com/150?text=Glow+Image+{i+1}", 
-            #                 caption=f"Image {i+1}")
-                    
-            #         st.write(f"Paramètres appliqués:")
-            #         for attr, val in attributs.items():
-            #             if abs(val) > 0.1:  # N'afficher que les attributs significativement modifiés
-            #                 st.write(f"- {attr}: {val:+.1f}")
-
+            # Affichage des résultats
+            if samples is not None:
+                st.subheader("Images générées")
+                st.image("images/glow/mnist_generated.png", caption=f"Images générées par Glow (température={temperature})")
+                
+                if bpd is not None:
+                    st.write(f"Bits par dimension (mesure de compression): {bpd:.4f}")
+                    st.write("""Plus cette valeur est basse, meilleure est la qualité du modèle génératif 
+                             (meilleure modélisation de la distribution des données).""")
+            else:
+                st.error("Erreur lors de la génération des images. Vérifiez que le modèle pré-entraîné existe ou essayez de l'entraîner.")
 
     # Explication supplémentaire sur le fonctionnement de la manipulation
-    st.header("Comment fonctionne la manipulation d'attributs")
+    st.header("Manipulation d'attributs sémantiques")
     st.write("""
     La manipulation d'attributs dans Glow fonctionne grâce à l'espace latent structuré:
 
@@ -212,11 +224,19 @@ def show_glow():
     Cette approche permet une édition précise et contrôlée, contrairement aux GANs où 
     le contrôle précis est souvent plus difficile à obtenir.
     """)
+    
+    st.write("""
+    Par exemple, sur le jeu de données CelebA (visages de célébrités), on peut modifier des attributs
+    comme le sourire, l'âge, les lunettes ou le genre en ajoutant un vecteur de direction appris
+    dans l'espace latent.
+    """)
+
     st.header("Ressources")
     st.write("""
     Pour approfondir vos connaissances sur Glow:
     
     - [Article original: "Glow: Generative Flow with Invertible 1x1 Convolutions"](https://arxiv.org/abs/1807.03039)
     - [Code source officiel d'OpenAI](https://github.com/openai/glow)
-    - [Tutoriel PyTorch sur l'implémentation de Glow](https://github.com/rosinality/glow-pytorch)
+    - [Implémentation PyTorch de Glow](https://github.com/rosinality/glow-pytorch)
+    - [Tutoriel sur les Normalizing Flows](https://lilianweng.github.io/posts/2018-10-13-flow-models/)
     """)
