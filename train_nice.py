@@ -335,61 +335,52 @@ def setup_model(image_path=None, num_layers=4, hidden_dim=128, dataset_type="2d"
     return model, device, target
 
 class TwoMoons:
-    def __init__(self, scale=1.0, noise=0.1):
-        self.scale = scale
-        self.noise = noise
+    def __init__(self):
+        self.n_dims = 2
         
     def sample(self, num_samples):
-        """Sample from two moons distribution."""
-        n_samples_per_moon = num_samples // 2
+        """Sample from the two moons distribution (similar to normflows implementation)."""
+        # Using direct sampling with rejection
+        samples = []
+        count = 0
         
-        # First moon
-        angle = np.pi * np.random.rand(n_samples_per_moon)
-        x1 = 0.5 * np.cos(angle)
-        y1 = 0.5 * np.sin(angle)
+        # Use rejection sampling for two moons
+        while count < num_samples:
+            # Sample uniformly from a rectangle
+            x = torch.rand(min(10 * num_samples, 1000), 2) * 8 - 4  # Range from -4 to 4
+            
+            # Calculate the log probability
+            log_prob = self.log_prob(x)
+            
+            # Convert to probability and normalize
+            prob = torch.exp(log_prob - torch.max(log_prob))
+            prob = prob / torch.max(prob)
+            
+            # Rejection sampling
+            mask = torch.rand(x.shape[0]) < prob
+            x_accepted = x[mask]
+            
+            # Add accepted samples
+            samples.append(x_accepted)
+            count += x_accepted.shape[0]
+            
+            # Break if we have enough samples
+            if count >= num_samples:
+                break
         
-        # Second moon
-        angle = np.pi * np.random.rand(num_samples - n_samples_per_moon)
-        x2 = 1 - 0.5 * np.cos(angle)
-        y2 = 0.5 * np.sin(angle) - 0.5
-        
-        # Combine
-        x = np.concatenate([x1, x2]) * self.scale
-        y = np.concatenate([y1, y2]) * self.scale
-        
-        # Add noise
-        x += np.random.normal(0, self.noise, x.shape)
-        y += np.random.normal(0, self.noise, y.shape)
-        
-        # Combine to tensor
-        samples = np.column_stack([x, y])
-        return torch.tensor(samples, dtype=torch.float32)
+        # Combine and truncate
+        samples = torch.cat(samples, dim=0)[:num_samples]
+        return samples
     
     def log_prob(self, z):
-        """Approximate log probability of two moons distribution."""
-        # This is approximate since there's no closed form
-        z_np = z.detach().cpu().numpy()
-        x, y = z_np[:, 0], z_np[:, 1]
-        
-        # Distance to first moon
-        angle1 = np.arctan2(y, x)
-        radius1 = 0.5
-        moon1_x = radius1 * np.cos(angle1)
-        moon1_y = radius1 * np.sin(angle1)
-        dist1 = np.sqrt((x - moon1_x)**2 + (y - moon1_y)**2)
-        
-        # Distance to second moon
-        angle2 = np.arctan2(y + 0.5, x - 1)
-        radius2 = 0.5
-        moon2_x = 1 - radius2 * np.cos(angle2)
-        moon2_y = radius2 * np.sin(angle2) - 0.5
-        dist2 = np.sqrt((x - moon2_x)**2 + (y - moon2_y)**2)
-        
-        # Use minimum distance to determine probability
-        dist = np.minimum(dist1, dist2)
-        log_prob = -dist**2 / (2 * self.noise**2)
-        
-        return torch.tensor(log_prob, dtype=torch.float32, device=z.device)
+        """Log probability of two moons distribution (matches normflows implementation)."""
+        a = torch.abs(z[:, 0])
+        log_prob = (
+            -0.5 * ((torch.norm(z, dim=1) - 2) / 0.2) ** 2
+            - 0.5 * ((a - 2) / 0.3) ** 2
+            + torch.log(1 + torch.exp(-4 * a / 0.09))
+        )
+        return log_prob
 
 def target_distribution(target, device, dataset_type="2d"):
     """
@@ -408,7 +399,7 @@ def target_distribution(target, device, dataset_type="2d"):
         return None, None, None
     
     grid_size = 200
-    xx, yy = torch.meshgrid(torch.linspace(-3, 3, grid_size), torch.linspace(-3, 3, grid_size))
+    xx, yy = torch.meshgrid(torch.linspace(-4, 4, grid_size), torch.linspace(-4, 4, grid_size))
     zz = torch.cat([xx.unsqueeze(2), yy.unsqueeze(2)], 2).view(-1, 2)
     zz = zz.to(device)
 

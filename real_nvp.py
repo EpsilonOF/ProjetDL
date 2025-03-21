@@ -2,7 +2,7 @@ import streamlit as st
 import normflows as nf
 import torch
 import matplotlib.pyplot as plt
-from train_realnvp import setup_model, target_distribution, train_model
+from train_realnvp import setup_model, target_distribution
 
 def show_realnvp():
     st.title("RealNVP: Real-valued Non-Volume Preserving")
@@ -153,12 +153,11 @@ def show_realnvp():
         batch_norm = st.checkbox("Utiliser BatchNorm", value=True)
         
         st.subheader("Données")
-        dataset = st.selectbox(
-            "Jeu de données",
-            ["MNIST", "CIFAR-10", "CelebA", "Distribution 2D", "Image personnalisée"]
+        dataset = "Distribution 2D"
+        distribution = st.selectbox(
+            "Type de distribution 2D",
+            ["TwoMoons"]
         )
-        if dataset=="Image personnalisée":
-            uploaded_file = st.file_uploader("Télécharger une image", type=["jpg", "jpeg", "png"])
         
         generate_button = st.button("Générer", key="realnvp_generate")
 
@@ -167,29 +166,16 @@ def show_realnvp():
         temperature = st.slider("Température", min_value=0.1, max_value=1.0, value=0.7, step=0.1)
         n_samples = st.slider("Nombre d'échantillons", min_value=1, max_value=16, value=4, step=1)
         max_iter = st.slider("Itérations d'entraînement", min_value=1000, max_value=5000, value=2000, step=500)
-        if dataset == "Distribution 2D":
-            distribution = st.selectbox(
-                "Type de distribution 2D",
-                ["Gaussienne 2D", "Mélange de gaussiennes", "Spirale", "Anneaux", "Damier"]
-            )
 
     # Section pour afficher les résultats
     if generate_button:
         with st.spinner("Génération en cours..."):
-            image_path = None
-            if uploaded_file is not None:
-                with open("images/realnvp/uploaded_image.png", "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-                    image_path = "images/realnvp/uploaded_image.png"
-                
-                # Afficher l'image
-                st.image(uploaded_file, caption="Image téléchargée", width=200)
             # Configuration des paramètres utilisateur
             num_layers = n_blocks * 2  # Chaque bloc de couplage est souvent pair
             show_iter = int(max_iter/10)   # Affichage intermédiaire
 
-            # Initialisation du modèle avec les hyperparamètres de l'utilisateur
-            model, device, target = setup_model(image_path, num_layers=num_layers)  # image_path utilisé si un dataset est image-based
+            # Initialisation du modèle avec les hyperparamètres de l'utilisateur pour TwoMoons
+            model, device, target = setup_model(num_layers=num_layers)
             xx, yy, zz = target_distribution(target, device)
 
             loss_hist = []
@@ -236,8 +222,23 @@ def show_realnvp():
             ax_loss.set_title("Historique de la perte")
             ax_loss.legend()
             st.pyplot(fig_loss)
+            
+            # Générer et afficher des échantillons
+            model.eval()
+            with torch.no_grad():
+                samples = model.sample(n_samples * n_samples)
+                
+            # Visualiser des échantillons
+            fig, ax = plt.subplots(figsize=(5, 5))
+            samples_np = samples.cpu().numpy()
+            ax.scatter(samples_np[:, 0], samples_np[:, 1], s=5, alpha=0.5)
+            ax.set_aspect('equal', 'box')
+            ax.set_xlim(-4, 4)
+            ax.set_ylim(-4, 4)
+            ax.set_title("Échantillons générés par RealNVP")
+            st.pyplot(fig)
 
-            st.write(f"Modèle RealNVP avec {n_blocks} blocs, masque '{mask_type}', et jeu de données '{dataset}'")
+            st.write(f"Modèle RealNVP avec {n_blocks} blocs, masque '{mask_type}', entraîné sur TwoMoons")
             
     
     st.header("Ressources")

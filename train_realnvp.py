@@ -113,7 +113,7 @@ def setup_model(image_path=None, num_layers=32):
 
 def target_distribution(target, device):
     grid_size = 200
-    xx, yy = torch.meshgrid(torch.linspace(-3, 3, grid_size), torch.linspace(-3, 3, grid_size))
+    xx, yy = torch.meshgrid(torch.linspace(-4, 4, grid_size), torch.linspace(-4, 4, grid_size))
     zz = torch.cat([xx.unsqueeze(2), yy.unsqueeze(2)], 2).view(-1, 2)
     zz = zz.to(device)
 

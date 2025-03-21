@@ -1,8 +1,5 @@
 import streamlit as st
-import torch
 import matplotlib.pyplot as plt
-import numpy as np
-from train_glow import setup_model, prepare_training_data, generate_samples, get_bits_per_dim, execute_glow
 
 def show_glow():
     st.title("Glow: Generative Flow with Invertible 1x1 Convolutions")
@@ -144,71 +141,27 @@ def show_glow():
     - Le second terme est le logarithme du déterminant de la jacobienne de la transformation
     """)
     
-    st.header("Démo interactive")
+    st.header("Note sur l'application à la distribution TwoMoons")
     st.write("""
-    Expérimentez avec le modèle Glow en ajustant les paramètres ci-dessous. Le modèle a été pré-entraîné
-    sur le jeu de données MNIST pour générer des chiffres manuscrits.
+    Dans le cadre de ce projet simplifié, le modèle Glow se focalise uniquement sur la distribution TwoMoons.
+    Bien que Glow soit conçu pour des données plus complexes comme les images, nous l'adaptons ici
+    pour démontrer son principe sur un problème de distribution 2D plus simple.
     """)
-
-    # Disposition en colonnes pour les paramètres et résultats
-    col1, col2 = st.columns([1, 1])
-
-    with col1:
-        st.subheader("Paramètres du modèle")
-        n_flow = st.slider("Nombre de couches de flux par niveau (K)", min_value=1, max_value=32, value=12, step=1)
-        n_blocks = st.slider("Nombre de niveaux (L)", min_value=1, max_value=8, value=4, step=1)
-        hidden_channels = st.slider("Nombre de canaux cachés", min_value=64, max_value=512, value=256, step=64)
-        
-        dataset = st.selectbox(
-            "Jeu de données",
-            ["MNIST", "CIFAR10"]
-        )
-        
-        use_lu = not st.checkbox("Désactiver la décomposition LU (plus lent mais potentiellement plus expressif)", value=False)
-        
-    with col2:
-        st.subheader("Paramètres de génération")
-        temperature = st.slider("Température (contrôle la diversité)", min_value=0.1, max_value=1.0, value=0.7, step=0.1)
-        num_samples = st.slider("Nombre d'échantillons par classe", min_value=1, max_value=10, value=4, step=1)
-        
-        # Ajouter des options de training si souhaité
-        training_options = st.expander("Options d'entraînement", expanded=False)
-        with training_options:
-            train = st.checkbox("Réentraîner le modèle", value=False)
-            if train:
-                max_iter = st.slider("Nombre d'itérations d'entraînement", min_value=1000, max_value=20000, value=5000, step=1000)
-            else:
-                max_iter = 5000  # Valeur par défaut si pas d'entraînement
-
-    # Section pour le bouton de génération
-    generate_button = st.button("Générer des images", key="glow_generate")
-
-    # Section pour afficher les résultats
-    if generate_button:
-        with st.spinner(f"Traitement en cours... {'Entraînement et ' if train else ''}Génération d'images avec Glow"):
-            # Appel à la fonction execute_glow avec les paramètres sélectionnés
-            samples, bpd = execute_glow(
-                n_flow=n_flow,
-                n_blocks=n_blocks,
-                hidden_channels=hidden_channels,
-                temperature=temperature,
-                num_samples=num_samples,
-                train=train,
-                max_iter=max_iter,
-                dataset=dataset
-            )
-            
-            # Affichage des résultats
-            if samples is not None:
-                st.subheader("Images générées")
-                st.image("images/glow/mnist_generated.png", caption=f"Images générées par Glow (température={temperature})")
-                
-                if bpd is not None:
-                    st.write(f"Bits par dimension (mesure de compression): {bpd:.4f}")
-                    st.write("""Plus cette valeur est basse, meilleure est la qualité du modèle génératif 
-                             (meilleure modélisation de la distribution des données).""")
-            else:
-                st.error("Erreur lors de la génération des images. Vérifiez que le modèle pré-entraîné existe ou essayez de l'entraîner.")
+    
+    st.info("""
+    L'implémentation de Glow pour TwoMoons n'est pas fournie dans cette démo car elle nécessiterait 
+    une adaptation significative de l'architecture. Les modèles NICE et RealNVP sont mieux adaptés
+    pour ce cas d'usage et vous pouvez les tester dans les onglets correspondants.
+    """)
+    
+    # Afficher une image illustrative
+    st.subheader("Exemple d'application de Glow sur MNIST (référence)")
+    st.image("images/glow/mnist_generated.png", caption="Exemple de chiffres MNIST générés par Glow (non disponible pour TwoMoons)")
+    
+    st.write("""
+    Pour tester les normalizing flows sur la distribution TwoMoons, nous vous recommandons d'utiliser
+    les modèles NICE ou RealNVP qui sont mieux adaptés à ce cas d'usage et plus simples à mettre en œuvre
+    sur des données de faible dimension.""")
 
     # Explication supplémentaire sur le fonctionnement de la manipulation
     st.header("Manipulation d'attributs sémantiques")
