@@ -1,3 +1,9 @@
-*/uploaded_image.png
-__pycache__/
 *.pyc
+venv/
+env/
+_build/
+**/__pycache__/
+.vscode/
+.idea/
+**/_static/
+**/_templates/
