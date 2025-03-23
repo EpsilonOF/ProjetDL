@@ -1,6 +1,4 @@
 import streamlit as st
-import torch
-import matplotlib.pyplot as plt
 import os
 from nice.train_nice import execute_nice
 
@@ -20,9 +18,10 @@ def show_nice():
     st.title("NICE: Non-linear Independent Components Estimation")
     st.write(
         """
-    NICE (Non-linear Independent Components Estimation) est un des premiers modèles de Normalizing Flow
-    proposé par Dinh et al. en 2014. Il introduit le concept de couplage additif pour permettre
-    des transformations inversibles avec un jacobien facilement calculable.
+    NICE (Non-linear Independent Components Estimation) est un des premiers modèles
+    de Normalizing Flow proposé par Dinh et al. en 2014. Il introduit le concept de
+    couplage additif pour permettre des transformations inversibles avec un jacobien
+    facilement calculable.
     """
     )
 
@@ -76,8 +75,9 @@ def show_nice():
 
     st.write(
         """
-    2. **Déterminant du Jacobien**: La matrice jacobienne de cette transformation est triangulaire,
-       ce qui implique que son déterminant est simplement le produit des éléments diagonaux, qui sont tous égaux à 1.
+    2. **Déterminant du Jacobien**: La matrice jacobienne de cette transformation
+    est triangulaire, ce qui implique que son déterminant est simplement le produit
+    des éléments diagonaux, qui sont tous égaux à 1.
     """
     )
 
@@ -166,13 +166,19 @@ def show_nice():
     with col1:
         st.subheader("Hyperparamètres")
         n_layers = st.slider(
-            "Nombre de couches de couplage", min_value=2, max_value=12, value=4, step=1
+            "Nombre de couches de couplage",
+            min_value=2,
+            max_value=12,
+            value=4,
+            step=1,
         )
         hidden_dim = st.slider(
-            "Nombre de neurones cachés", min_value=32, max_value=256, value=128, step=32
+            "Nombre de neurones cachés",
+            min_value=32,
+            max_value=256,
+            value=128,
+            step=32,
         )
-
-        st.subheader("Données")
 
         generate_button = st.button("Générer", key="nice_generate")
 
@@ -195,20 +201,25 @@ def show_nice():
             st.image(image_path, width=200)
             execute_nice(n_layers, hidden_dim, max_iter)
             st.write(
-                f"Modèle NICE avec {n_layers} couches de couplage, {hidden_dim} neurones cachés, et {max_iter} itérations d'entraînement"
+                f"""
+            Modèle NICE avec {n_layers} couches de couplage,
+            {hidden_dim} neurones cachés, et {max_iter} itérations d'entraînement
+            """
             )
 
     st.header("Application à des données complexes")
     st.write(
         """
-    NICE peut être appliqué à des problèmes plus complexes que les distributions 2D, comme la génération
-    d'images. Pour les données de haute dimension comme MNIST (28×28 = 784 dimensions), NICE utilise la
-    même architecture avec des couches de couplage additives, mais avec un réseau plus large et plus
-    profond pour capturer les dépendances complexes.
+    NICE peut être appliqué à des problèmes plus complexes que les distributions 2D,
+    comme la génération d'images. Pour les données de haute dimension comme MNIST
+    (28×28 = 784 dimensions), NICE utilise la même architecture avec des couches
+    de couplage additives, mais avec un réseau plus large et plus profond pour
+    capturer les dépendances complexes.
 
-    Bien que NICE fonctionne sur MNIST, sa performance est limitée par sa nature transformative additive.
-    Les modèles plus récents comme RealNVP et Glow offrent une meilleure expressivité pour modéliser
-    des distributions plus complexes grâce à leurs transformations affines et convolutives.
+    Bien que NICE fonctionne sur MNIST, sa performance est limitée par sa nature
+    transformative additive. Les modèles plus récents comme RealNVP et Glow offrent une
+    meilleure expressivité pour modéliser des distributions plus complexes grâce à leurs
+    transformations affines et convolutives.
     """
     )
 
@@ -219,6 +230,7 @@ def show_nice():
         """
     Pour approfondir vos connaissances sur NICE:
 
-    - [Article original: "NICE: Non-linear Independent Components Estimation"](https://arxiv.org/abs/1410.8516)
+    - [Article original: "NICE: Non-linear Independent
+    Components Estimation"](https://arxiv.org/abs/1410.8516)
     """
     )

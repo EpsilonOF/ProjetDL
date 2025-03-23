@@ -411,7 +411,10 @@ class MNISTDistribution:
 
         # Download and load the training data
         self.mnist_trainset = datasets.MNIST(
-            root="./datasets", train=True, download=download, transform=transform
+            root="./datasets",
+            train=True,
+            download=download,
+            transform=transform,
         )
 
         # Create data loader
@@ -562,9 +565,9 @@ class TwoMoons:
         """
         a = torch.abs(z[:, 0])
         log_prob = (
-            -0.5 * ((torch.norm(z, dim=1) - 2) / 0.2) ** 2
-            - 0.5 * ((a - 2) / 0.3) ** 2
-            + torch.log(1 + torch.exp(-4 * a / 0.09))
+            -0.5 * ((torch.norm(z, dim=1) - 2) / 0.2) ** 2  # noqa: W503
+            - 0.5 * ((a - 2) / 0.3) ** 2  # noqa: W503
+            + torch.log(1 + torch.exp(-4 * a / 0.09))  # noqa: W503
         )
         return log_prob
 
@@ -610,7 +613,6 @@ def train_model(
     model,
     target,
     device,
-    dataset_type="2d",
     xx=None,
     yy=None,
     zz=None,
@@ -631,10 +633,9 @@ def train_model(
         model (NICE): NICE model to train
         target: Target distribution object with sample method
         device (torch.device): Device for tensor operations (CPU/GPU)
-        dataset_type (str, optional): Type of dataset ("2d", "mnist", or "image"). Defaults to "2d".
-        xx (torch.Tensor, optional): X-coordinates grid for visualization. Required for 2D visualization.
-        yy (torch.Tensor, optional): Y-coordinates grid for visualization. Required for 2D visualization.
-        zz (torch.Tensor, optional): Flattened grid points for evaluation. Required for 2D visualization.
+        xx (torch.Tensor, optional): X-coordinates grid for visualization.
+        yy (torch.Tensor, optional): Y-coordinates grid for visualization.
+        zz (torch.Tensor, optional): Flattened grid points for evaluation.
         max_iter (int, optional): Maximum number of training iterations. Defaults to 4000.
         num_samples (int, optional): Number of samples per training batch. Defaults to 512.
         show_iter (int, optional): Interval for showing visualization updates. Defaults to 500.
@@ -670,52 +671,21 @@ def train_model(
         if show_progress and (it + 1) % show_iter == 0:
             print(f"Iteration {it + 1}, loss: {loss.item():.4f}")
 
-            # Visualize 2D distributions
-            if (
-                dataset_type == "2d"
-                and xx is not None
-                and yy is not None
-                and zz is not None
-            ):
-                model.eval()
-                with torch.no_grad():
-                    samples = zz.view(-1, 2)
-                    log_prob = model.log_prob(samples)
-                model.train()
+        # Visualize 2D distributions
+        model.eval()
+        with torch.no_grad():
+            samples = zz.view(-1, 2)
+            log_prob = model.log_prob(samples)
+        model.train()
 
-                prob = torch.exp(log_prob.to("cpu").view(*xx.shape))
-                prob[torch.isnan(prob)] = 0
+        prob = torch.exp(log_prob.to("cpu").view(*xx.shape))
+        prob[torch.isnan(prob)] = 0
 
-                plt.figure(figsize=(10, 10))
-                plt.pcolormesh(xx, yy, prob.data.numpy(), cmap="coolwarm")
-                plt.gca().set_aspect("equal", "box")
-                plt.title(f"Learned distribution - Iteration {it + 1}")
-                plt.show()
-
-            # Visualize MNIST samples
-            elif dataset_type == "mnist":
-                model.eval()
-                with torch.no_grad():
-                    # Generate samples
-                    samples = model.sample(25)
-                model.train()
-
-                if show_progress:
-                    # Reshape and visualize
-                    fig, axes = plt.subplots(5, 5, figsize=(8, 8))
-                    for i, ax in enumerate(axes.flat):
-                        if i < len(samples):
-                            # Reshape and normalize
-                            digit = samples[i].cpu().view(28, 28).detach().numpy()
-                            digit = (digit + 1) / 2  # Scale from [-1, 1] to [0, 1]
-
-                            # Display
-                            ax.imshow(digit, cmap="gray")
-                            ax.axis("off")
-
-                    plt.tight_layout()
-                    plt.suptitle(f"Generated MNIST Samples - Iteration {it + 1}")
-                    plt.show()
+        plt.figure(figsize=(10, 10))
+        plt.pcolormesh(xx, yy, prob.data.numpy(), cmap="coolwarm")
+        plt.gca().set_aspect("equal", "box")
+        plt.title(f"Learned distribution - Iteration {it + 1}")
+        plt.show()
 
     # Save model if path is provided
     if save_path:
@@ -782,10 +752,12 @@ def plot_target_distribution(model, target, xx, yy, zz):
 
 def execute_nice(n_layers, hidden_dim, max_iter):
     """
-    Executes and trains a NICE (Non-linear Independent Components Estimation) model to learn a target distribution.
+    Executes and trains a NICE (Non-linear Independent Components Estimation)
+    model to learn a target distribution.
 
-    This function configures and trains a NICE model with a specified number of layers and hidden dimensions,
-    over a maximum number of iterations. It displays intermediate results and the final loss curve.
+    This function configures and trains a NICE model with a specified number
+    of layers and hidden dimensions, over a maximum number of iterations.
+    It displays intermediate results and the final loss curve.
 
     Args:
         n_layers (int): The number of layers in the model.
@@ -796,7 +768,8 @@ def execute_nice(n_layers, hidden_dim, max_iter):
         None
 
     Description:
-        - Configures the model parameters based on the specified number of layers and hidden dimension.
+        - Configures the model parameters based on the specified number
+        of layers and hidden dimension.
         - Initializes the NICE model with defined hyperparameters.
         - Trains the model over a specified number of iterations.
         - Displays thumbnails of the learned distribution at regular intervals.

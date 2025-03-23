@@ -1,7 +1,4 @@
 import streamlit as st
-import normflows as nf
-import torch
-import matplotlib.pyplot as plt
 from realnvp.train_realnvp import execute_realnvp
 
 
@@ -182,14 +179,12 @@ def show_realnvp():
     with col1:
         st.subheader("Hyperparamètres")
         n_blocks = st.slider(
-            "Nombre de blocs de couplage", min_value=2, max_value=12, value=6, step=1
+            "Nombre de blocs de couplage",
+            min_value=2,
+            max_value=12,
+            value=6,
+            step=1,
         )
-
-        st.subheader("Architecture")
-        mask_type = st.radio("Type de masque", ["Damier", "Par canaux", "Mixte"])
-
-        st.subheader("Données")
-
         generate_button = st.button("Générer", key="realnvp_generate")
 
     with col2:
@@ -211,9 +206,7 @@ def show_realnvp():
             )
             st.image(image_path, width=200)
             execute_realnvp(n_blocks, max_iter)
-            st.write(
-                f"Modèle RealNVP avec {n_blocks} blocs, masque '{mask_type}', entraîné sur TwoMoons"
-            )
+            st.write(f"Modèle RealNVP avec {n_blocks} blocs, entraîné sur TwoMoons")
 
     st.header("Ressources")
     st.write(

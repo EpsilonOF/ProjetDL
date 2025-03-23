@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+from glow.train_glow import execute_glow
 
 
 def show_glow():
@@ -129,10 +130,12 @@ def show_glow():
     Glow utilise une architecture multi-échelle similaire à RealNVP, où:
 
     1. L'image est traitée à travers plusieurs étapes (steps of flow)
-    2. À certains points, la représentation est divisée en deux, avec une partie envoyée directement à la sortie
+    2. À certains points, la représentation est divisée en deux, avec une partie envoyée
+    directement à la sortie
     3. Ce processus permet de capturer les dépendances à différentes échelles spatiales
 
-    Cette conception hierarchique permet à Glow de modéliser efficacement des images de haute résolution.
+    Cette conception hierarchique permet à Glow de modéliser efficacement des images de
+    haute résolution.
     """
     )
 
@@ -142,7 +145,8 @@ def show_glow():
     Glow a démontré d'excellentes performances dans plusieurs tâches:
 
     1. **Génération d'images** - Création d'images photoréalistes
-    2. **Manipulation sémantique** - Modification d'attributs spécifiques (sourire, lunettes, âge, etc.)
+    2. **Manipulation sémantique** - Modification d'attributs spécifiques (sourire,
+    lunettes, âge, etc.)
     3. **Interpolation** - Transition fluide entre différentes images
     4. **Inpainting** - Complétion de parties manquantes d'images
     """
@@ -176,7 +180,8 @@ def show_glow():
     st.header("Formulation mathématique")
     st.latex(
         r"""
-    \log p_X(x) = \log p_Z(f(x)) + \log \left| \det \frac{\partial f(x)}{\partial x} \right|
+    \log p_X(x) = \log p_Z(f(x)) + \log \left| \det \frac{\partial f(x)}
+    {\partial x} \right|
     """
     )
 
@@ -184,18 +189,11 @@ def show_glow():
         """
     où:
     - $p_X(x)$ est la densité de probabilité des données réelles
-    - $p_Z(z)$ est la densité de probabilité de la distribution latente (généralement une gaussienne)
+    - $p_Z(z)$ est la densité de probabilité de la distribution latente
+    (généralement une gaussienne)
     - $f$ est la transformation inversible apprise
-    - Le second terme est le logarithme du déterminant de la jacobienne de la transformation
-    """
-    )
-
-    st.header("Note sur l'application à la distribution TwoMoons")
-    st.write(
-        """
-    Dans le cadre de ce projet simplifié, le modèle Glow se focalise uniquement sur la distribution TwoMoons.
-    Bien que Glow soit conçu pour des données plus complexes comme les images, nous l'adaptons ici
-    pour démontrer son principe sur un problème de distribution 2D plus simple.
+    - Le second terme est le logarithme du déterminant de la jacobienne
+    de la transformation
     """
     )
 
@@ -218,18 +216,83 @@ def show_glow():
 
     st.write(
         """
-    Par exemple, sur le jeu de données CelebA (visages de célébrités), on peut modifier des attributs
-    comme le sourire, l'âge, les lunettes ou le genre en ajoutant un vecteur de direction appris
-    dans l'espace latent.
+    Par exemple, sur le jeu de données CelebA (visages de célébrités), on peut
+    modifier des attributs comme le sourire, l'âge, les lunettes ou le genre en
+    ajoutant un vecteur de direction appris dans l'espace latent.
     """
     )
+
+    st.header("Tester le modèle Glow")
+    st.write(
+        """
+    Expérimentez avec le modèle Glow en ajustant différents hyperparamètres:
+    """
+    )
+
+    # Disposition en colonnes pour les paramètres et résultats
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.subheader("Hyperparamètres")
+        L = st.slider(
+            "Nombre de niveaux multi-échelles (L)",
+            min_value=1,
+            max_value=4,
+            value=2,
+            step=1,
+        )
+        K = st.slider(
+            "Nombre de blocs Glow par niveau (K)",
+            min_value=4,
+            max_value=32,
+            value=16,
+            step=4,
+        )
+
+        generate_button = st.button("Générer", key="glow_generate")
+
+    with col2:
+        st.subheader("Paramètres d'entraînement")
+
+        batch_size = st.slider(
+            "Taille de batch",
+            min_value=32,
+            max_value=256,
+            value=128,
+            step=32,
+        )
+
+        max_iter = st.slider(
+            "Itérations d'entraînement",
+            min_value=1000,
+            max_value=20000,
+            value=5000,
+            step=1000,
+        )
+    st.write(
+        """
+    Attention : Glow est un modèle destiné à traiter des images avec une distribution complexe.
+    Ainsi, le tester sur TwoMoons comme les autres modèles n'aurait pas d'intérêt.
+    L'éxécution peut donc être très longue sans une grosse puissance de calcul (plusieurs heures).
+    """
+    )
+    # Section pour afficher les résultats
+    if generate_button:
+        with st.spinner("Entraînement en cours..."):
+            execute_glow(
+                L=L,
+                K=K,
+                batch_size=batch_size,
+                max_iter=max_iter,
+                save_path="modele.pth",
+            )
 
     st.header("Ressources")
     st.write(
         """
     Pour approfondir vos connaissances sur Glow:
 
-    - [Article original: "Glow: Generative Flow with Invertible 1x1 Convolutions"](https://arxiv.org/abs/1807.03039)
+    - [Article original: "Glow: Generative Flow with Invertible 1x1
+    Convolutions"](https://arxiv.org/abs/1807.03039)
     - [Code source officiel d'OpenAI](https://github.com/openai/glow)
     """
     )

@@ -31,9 +31,12 @@ class ImageDistribution(nf.distributions.Target):
 
         Args:
             image_path (str): Path to the image file
-            resolution (int, optional): Resolution of the discretized distribution. Defaults to 200.
-            blur_sigma (float, optional): Standard deviation for Gaussian smoothing. Defaults to 1.0.
-            scale (float, optional): Scale factor for the coordinate system. Defaults to 6.0.
+            resolution (int, optional): Resolution of the discretized distribution.
+                Defaults to 200.
+            blur_sigma (float, optional): Standard deviation for Gaussian smoothing.
+                Defaults to 1.0.
+            scale (float, optional): Scale factor for the coordinate system.
+                Defaults to 6.0.
         """
         super().__init__()
         try:
@@ -220,7 +223,15 @@ def target_distribution(target, device):
 
 
 def train_model(
-    model, target, xx, yy, zz, device, max_iter=4000, num_samples=2**9, show_iter=500
+    model,
+    target,
+    xx,
+    yy,
+    zz,
+    device,
+    max_iter=4000,
+    num_samples=2**9,
+    show_iter=500,
 ):
     """
     Train the RealNVP model on the target distribution.
@@ -361,7 +372,8 @@ def execute_realnvp(n_blocks, max_iter):
     num_layers = n_blocks * 2  # Chaque bloc de couplage est souvent pair
     show_iter = int(max_iter / 10)  # Affichage intermédiaire
 
-    # Initialisation du modèle avec les hyperparamètres de l'utilisateur pour TwoMoons
+    # Initialisation du modèle avec les hyperparamètres de l'utilisateur pour
+    # TwoMoons
     model, device, target = setup_model(num_layers=num_layers)
     xx, yy, zz = target_distribution(target, device)
 
