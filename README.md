@@ -107,6 +107,47 @@ L'entraînement utilise la maximisation de la vraisemblance (maximum likelihood 
 - Optimisation par descente de gradient stochastique avec Adam
 - Suivi des métriques d'entraînement comme la log-vraisemblance négative
 
+## Documentation avec Sphinx
+
+Ce projet utilise Sphinx pour générer une documentation complète et navigable. Voici comment configurer, créer et compiler la documentation.
+
+### Installation de Sphinx
+
+Pour installer Sphinx et les extensions nécessaires, exécutez :
+
+```bash
+pip install sphinx sphinx-rtd-theme autodoc numpydoc
+```
+
+### Structure de la documentation
+
+La documentation est organisée dans le dossier `docs/` avec la structure suivante :
+
+```
+docs/
+├── source/
+│   ├── _static/
+│   ├── _templates/
+│   ├── api/
+│   ├── tutorials/
+│   ├── conf.py
+│   ├── index.rst
+│   └── ...
+├── Makefile
+└── make.bat
+```
+
+### Génération de la documentation
+
+Pour générer la documentation automatiquement :
+
+```bash
+cd docs
+make html
+```
+
+Vous trouverez ensuite la documentation HTML dans `docs/build/html/`.
+
 ## 🤝 Contributions
 
 Les contributions sont les bienvenues! Pour contribuer:
