@@ -1,127 +1,127 @@
 # Normalizing Flows Implementation
 
-Ce projet est une implémentation interactive de différents modèles de Normalizing Flows (Flux Normalisants) avec une interface utilisateur Streamlit. Il permet de visualiser et d'expérimenter avec les transformations probabilistes NICE, RealNVP et Glow sur différentes distributions de données.
+This project is an interactive implementation of different Normalizing Flows models with a Streamlit user interface. It allows you to visualize and experiment with probabilistic transformations like NICE, RealNVP, and Glow on various data distributions.
 
-## 📋 Table des Matières
+## 📋 Table of Contents
 
 - [Introduction](#introduction)
-- [Modèles Implémentés](#modèles-implémentés)
+- [Implemented Models](#implemented-models)
 - [Installation](#installation)
-- [Utilisation](#utilisation)
-- [Structure du Projet](#structure-du-projet)
-- [Fonctionnalités](#fonctionnalités)
-- [Aspects Techniques](#aspects-techniques)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Features](#features)
+- [Technical Aspects](#technical-aspects)
 - [Contributions](#contributions)
-- [Références](#références)
+- [References](#references)
 
 ## 🔍 Introduction
 
-Les Normalizing Flows sont des modèles génératifs qui apprennent à transformer une distribution simple (comme une gaussienne) en une distribution complexe à travers une séquence de transformations inversibles. Ce projet offre une interface interactive pour explorer ces modèles, comprendre leur fonctionnement et visualiser leurs transformations.
+Normalizing Flows are generative models that learn to transform a simple distribution (like a Gaussian) into a complex distribution through a sequence of invertible transformations. This project offers an interactive interface to explore these models, understand how they work, and visualize their transformations.
 
-## 🧠 Modèles Implémentés
+## 🧠 Implemented Models
 
 ### NICE (Non-linear Independent Components Estimation)
-- Utilise des couplages additifs pour transformer les distributions
-- Architecture simplifiée avec des transformations inversibles explicites
-- Implémentation basée sur l'article ["NICE: Non-linear Independent Components Estimation"](https://arxiv.org/abs/1410.8516)
+- Uses additive couplings to transform distributions
+- Simplified architecture with explicit invertible transformations
+- Implementation based on the paper ["NICE: Non-linear Independent Components Estimation"](https://arxiv.org/abs/1410.8516)
 
 ### RealNVP (Real-valued Non-Volume Preserving)
-- Extension de NICE avec des transformations affines (multiplication et addition)
-- Permet des mappings plus expressifs grâce aux changements d'échelle
-- Basé sur l'article ["Density Estimation using Real NVP"](https://arxiv.org/abs/1605.08803)
+- Extension of NICE with affine transformations (multiplication and addition)
+- Allows more expressive mappings through scale changes
+- Based on the paper ["Density Estimation using Real NVP"](https://arxiv.org/abs/1605.08803)
 
 ### Glow
-- Architecture avancée combinant convolutions 1x1 inversibles et couplages affines
-- Inclut une normalisation par lots et des réseaux plus profonds
-- Implémentation selon l'article ["Glow: Generative Flow with Invertible 1x1 Convolutions"](https://arxiv.org/abs/1807.03039)
+- Advanced architecture combining invertible 1x1 convolutions and affine couplings
+- Includes batch normalization and deeper networks
+- Implementation according to the paper ["Glow: Generative Flow with Invertible 1x1 Convolutions"](https://arxiv.org/abs/1807.03039)
 
 ## 💻 Installation
 
 ```bash
-# Cloner le repository
-git clone https://github.com/EpsilonOF/ProjetDL.git
-cd ProjetDL
+# Clone the repository
+git clone https://github.com/EpsilonOF/Normalizing-flows-implementation.git
+cd Normalizing-flows-implementation
 
-# Créer et activer un environnement virtuel (optionnel)
+# Create and activate a virtual environment (optional)
 python -m venv venv
-source venv/bin/activate  # Sur Windows: venv\Scripts\activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Installer les dépendances
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-## 🚀 Utilisation
+## 🚀 Usage
 
-Pour lancer l'application Streamlit:
+To launch the Streamlit application:
 
 ```bash
 streamlit run app.py
 ```
 
-L'interface web devrait s'ouvrir automatiquement dans votre navigateur, vous permettant de:
-- Sélectionner un modèle (NICE, RealNVP, Glow)
-- Choisir une distribution de données (Cercles, Spirale, Gaussiennes multiples, etc.)
-- Ajuster les hyperparamètres d'entraînement
-- Visualiser les transformations en temps réel
+The web interface should automatically open in your browser, allowing you to:
+- Select a model (NICE, RealNVP, Glow)
+- Choose a data distribution (Circles, Spiral, Multiple Gaussians, etc.)
+- Adjust training hyperparameters
+- Visualize transformations in real-time
 
-## 📁 Structure du Projet
+## 📁 Project Structure
 
 ```
-ProjetDL/
-├── app.py                  # Point d'entrée de l'application Streamlit
-├── requirements.txt        # Dépendances du projet
-├── presentation.py         # Présentation du sujet
-├── nice/                   # Implémentation du modèle NICE
-│   ├── nice.py             # Mise en page du modèle
-│   ├── train_nice.py       # Entraînement du modèle
-│   └── images/             # Si besoin d'enregistrer des images
-├── realnvp/                # Implémentation du modèle RealNVP
-│   ├── real_nvp.py         # Mise en page du modèle
-│   ├── train_realnvp.py    # Entraînement du modèle
-│   └── images/             # Si besoin d'enregistrer des images
-├── glow/                   # Implémentation du modèle Glow
-│   ├── glow.py             # Mise en page du modèle
-│   ├── train_glow.py       # Entraînement du modèle
-│   └── images/             # Si besoin d'enregistrer des images
+Normalizing-flows-implementation/
+├── app.py                  # Entry point for the Streamlit application
+├── requirements.txt        # Project dependencies
+├── presentation.py         # Subject presentation
+├── nice/                   # NICE model implementation
+│   ├── nice.py             # Model layout
+│   ├── train_nice.py       # Model training
+│   └── images/             # If images need to be saved
+├── realnvp/                # RealNVP model implementation
+│   ├── real_nvp.py         # Model layout
+│   ├── train_realnvp.py    # Model training
+│   └── images/             # If images need to be saved
+├── glow/                   # Glow model implementation
+│   ├── glow.py             # Model layout
+│   ├── train_glow.py       # Model training
+│   └── images/             # If images need to be saved
 ```
 
-## ✨ Fonctionnalités
+## ✨ Features
 
-- **Visualisation en temps réel**: Observez comment la distribution se transforme pendant l'entraînement
-- **Personnalisation des hyperparamètres**: Ajustez le taux d'apprentissage, la taille des lots, le nombre d'epochs, etc.
-- **Analyse comparative**: Comparez les performances des différents modèles sur les mêmes données
+- **Real-time visualization**: Observe how the distribution transforms during training
+- **Hyperparameter customization**: Adjust learning rate, batch size, number of epochs, etc.
+- **Comparative analysis**: Compare the performance of different models on the same data
 
-## 🔧 Aspects Techniques
+## 🔧 Technical Aspects
 
-### Architecture des modèles
+### Model Architecture
 
-Les modèles sont implémentés comme des modules PyTorch héritant d'une classe de base commune, ce qui permet une interface cohérente pour:
-- La transformation directe (forward) d'une distribution simple en distribution complexe
-- La transformation inverse (backward) pour générer de nouveaux échantillons
-- Le calcul du log-déterminant jacobien pour l'estimation de densité
+The models are implemented as PyTorch modules inheriting from a common base class, providing a consistent interface for:
+- Direct transformation (forward) from a simple distribution to a complex distribution
+- Inverse transformation (backward) to generate new samples
+- Calculation of the log-determinant Jacobian for density estimation
 
-### Entraînement
+### Training
 
-L'entraînement utilise la maximisation de la vraisemblance (maximum likelihood estimation) comme objectif:
-- Minimiser la divergence KL entre la distribution cible et la distribution transformée
-- Optimisation par descente de gradient stochastique avec Adam
-- Suivi des métriques d'entraînement comme la log-vraisemblance négative
+Training uses maximum likelihood estimation as the objective:
+- Minimize the KL divergence between the target distribution and the transformed distribution
+- Optimization through stochastic gradient descent with Adam
+- Tracking of training metrics such as negative log-likelihood
 
-## Documentation avec Sphinx
+## Documentation with Sphinx
 
-Ce projet utilise Sphinx pour générer une documentation complète et navigable. Voici comment configurer, créer et compiler la documentation.
+This project uses Sphinx to generate comprehensive and navigable documentation. Here's how to set up, create, and compile the documentation.
 
-### Installation de Sphinx
+### Installing Sphinx
 
-Pour installer Sphinx et les extensions nécessaires, exécutez :
+To install Sphinx and the necessary extensions, run:
 
 ```bash
 pip install sphinx sphinx-rtd-theme autodoc numpydoc
 ```
 
-### Structure de la documentation
+### Documentation Structure
 
-La documentation est organisée dans le dossier `docs/` avec la structure suivante :
+The documentation is organized in the `docs/` folder with the following structure:
 
 ```
 docs/
@@ -137,28 +137,20 @@ docs/
 └── make.bat
 ```
 
-### Génération de la documentation
+### Generating Documentation
 
-Pour générer la documentation automatiquement :
+To automatically generate the documentation:
 
 ```bash
 cd docs
 make html
 ```
 
-Vous trouverez ensuite la documentation HTML dans `docs/build/html/`.
+You will then find the HTML documentation in `docs/build/html/`.
 
-## 🤝 Contributions
-
-Les contributions sont les bienvenues! Pour contribuer:
-1. Forkez le repository
-2. Créez une branche pour votre fonctionnalité (`git checkout -b feature/nouvelle-fonctionnalite`)
-3. Committez vos changements (`git commit -m 'Ajout d'une nouvelle fonctionnalité'`)
-4. Poussez vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
-5. Ouvrez une Pull Request
-
-## 📚 Références
+## 📚 References
 
 - [NICE: Non-linear Independent Components Estimation](https://arxiv.org/abs/1410.8516)
 - [Density Estimation using Real NVP](https://arxiv.org/abs/1605.08803)
 - [Glow: Generative Flow with Invertible 1x1 Convolutions](https://arxiv.org/abs/1807.03039)
+- [Normalizing Flow implementation in PyTorch](https://github.com/VincentStimper/normalizing-flows)
